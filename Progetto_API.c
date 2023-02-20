@@ -18,7 +18,7 @@ typedef struct vincolo
     char *pos_corr;       // array che allocherò di dimensione k che mi dice le posizioni in cui vi è sicuramente un dato carattere
     bool **car_non_pres;  // matrice booleana che mi dice in quali posizioni non è presente un carattere
     char *ref;            // parola di riferimento
-    u_int8_t ist_rif[64]; // istogramma della nostra parola di riferimento
+    int ist_rif[64]; // istogramma della nostra parola di riferimento
     int len;              // lunghezza per non dover fare strlen() ogni volta -> sarebbe k
     //////////
     char *car_eff_pres; // caratteri effettivamente presenti per velocizzare la verifica se una data parola rispetta i vincoli
@@ -49,9 +49,9 @@ char hcs(char x)
         return x - 60;
 } // hash character set -> serve per poter fare l'istogramma dei caratteri di soli 64 elementi invece che allocare tutti e 256 elementi della tabella ASCII
 
-void counting(char *string, u_int8_t *istogramma, int len)
+void counting(char *string, int *istogramma, int len)
 {
-    for (u_int8_t i = 0; i < len; i++)
+    for (int i = 0; i < len; i++)
         istogramma[(unsigned char)hcs(string[i])]++;
 } // costruisce l'istogramma data una stringa
 
@@ -60,10 +60,10 @@ void confronto(char *da_confr, vincolo *vinc)
     int len = vinc->len, j = 0;
     char res[len + 1]; // allochiamo una stringa di dimensione uguale a k+1
     memset(res, 0, sizeof(char) * (len + 1));
-    u_int8_t ist_da_confr[64] = {0};
-    u_int8_t c_i[64] = {0};                // #occorrenze di carattere in posizione corretta prima di i
-    u_int8_t num[64] = {0};                // #occorrenze di carattere in posizione SCORRETTA prima di i
-    u_int8_t temp[64] = {0};               // #occorrenze per '|'
+    int ist_da_confr[64] = {0};
+    int c_i[64] = {0};                // #occorrenze di carattere in posizione corretta prima di i
+    int num[64] = {0};                // #occorrenze di carattere in posizione SCORRETTA prima di i
+    int temp[64] = {0};               // #occorrenze per '|'
     counting(da_confr, ist_da_confr, len); // calcolo l'istogramma della mia parola da confrontare
 
     // Faccio una prima passata in cui non tengo conto del vincolo n_i-c_i
@@ -74,7 +74,7 @@ void confronto(char *da_confr, vincolo *vinc)
     num = numero di caratteri in posizione scorretta prima di i
     */
 
-    for (u_int8_t i = 0; i < len; i++)
+    for (int i = 0; i < len; i++)
     {
         j = hcs(da_confr[i]);
         if (vinc->ref[i] == da_confr[i])
@@ -97,14 +97,14 @@ void confronto(char *da_confr, vincolo *vinc)
             if (vinc->occorrenze[j].esatto_num != true)
             {                                  // magari avevo trovato in un altro caso il numero esatto
                 vinc->occorrenze[j].elem = -1; //-1 indica che non ce ne sono completamente
-                for (u_int8_t w = 0; w < len; w++)
+                for (int w = 0; w < len; w++)
                     vinc->car_non_pres[j][w] = true; // dirò che in ogni indice della lettera j non sarà presente
             }
         }
     }
     // dopo questa passata devo verificare il vincolo n_i - c_i
 
-    for (u_int8_t i = 0; i < len; i++)
+    for (int i = 0; i < len; i++)
     {
         j = hcs(da_confr[i]); // ovvero mi restutuisce un indice da 0-63
         if (res[i] == '|')
@@ -121,7 +121,7 @@ void confronto(char *da_confr, vincolo *vinc)
         }
     }
 
-    for (u_int8_t i = 0; i < 64; i++)
+    for (int i = 0; i < 64; i++)
     {
         if (vinc->occorrenze[i].esatto_num != true && temp[i] > vinc->occorrenze[i].elem && vinc->occorrenze[i].elem != -1)
             vinc->occorrenze[i].elem = temp[i]; // aggiorno solo se trovo un MINIMO più grande chiaramente
@@ -132,14 +132,14 @@ void confronto(char *da_confr, vincolo *vinc)
 
 bool rispetta_vincolo(vincolo *vinc, char *p) // Funzione che verifica se una data parola rispetta i vincoli stabiliti durante una data partita
 {
-    u_int8_t ist_da_confr[64] = {0};
+    int ist_da_confr[64] = {0};
     int k = vinc->len;
     if (strcmp(vinc->ref, p) == 0) // caso in cui coincida con la parola di riferimento
         return true;
 
-    for (u_int8_t i = 0; i < k; i++)
+    for (int i = 0; i < k; i++)
     {
-        u_int8_t j = hcs(p[i]);
+        int j = hcs(p[i]);
         if (vinc->pos_corr[i] != 0 && vinc->pos_corr[i] != p[i]) // caso in cui non combaciano i caratteri
             return false;
         if (vinc->car_non_pres[j][i] == true) // caso in cui sappiamo che in quell'indice non è presente quel carattere
@@ -147,9 +147,9 @@ bool rispetta_vincolo(vincolo *vinc, char *p) // Funzione che verifica se una da
     }
     counting(p, ist_da_confr, k);
 
-    for (u_int8_t i = 0; i < k; i++)
+    for (int i = 0; i < k; i++)
     {
-        u_int8_t j = hcs(vinc->car_eff_pres[i]);
+        int j = hcs(vinc->car_eff_pres[i]);
         if (vinc->car_eff_pres[i] == 0)
             return true;
         if (vinc->occorrenze[j].elem > ist_da_confr[j]) // non rispetta vincolo minimo
@@ -533,7 +533,7 @@ int main()
     vinc->ref = (char *)malloc(sizeof(char) * (k + 1));
     vinc->pos_corr = (char *)calloc(sizeof(char), k + 1);
     vinc->car_non_pres = (bool **)calloc(sizeof(bool *), 64);
-    for (u_int8_t i = 0; i < 64; i++)
+    for (int i = 0; i < 64; i++)
         vinc->car_non_pres[i] = (bool *)calloc(sizeof(bool), k); // alloco la matrice
     vinc->len = k;
     vinc->car_eff_pres = (char *)calloc(sizeof(char), k);
@@ -557,7 +557,7 @@ int main()
     distruggi_RB(T->root);
     free(T);
     ///////////////
-    for (u_int8_t i = 0; i < 64; i++)
+    for (int i = 0; i < 64; i++)
         free(vinc->car_non_pres[i]);
     free(vinc->car_non_pres);
     free(vinc->car_eff_pres);
