@@ -23,7 +23,7 @@ In my approach, I implemented a Binary Search Tree **(BST)** in conjunction with
 The use of a list within the BST allows to save efficiently memory.
 
 ```c
-typedef struct Node_{
+typedef struct Node{
     struct node_* left;
     struct node_* right;
     struct node_* next;
